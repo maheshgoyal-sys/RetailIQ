@@ -1,0 +1,182 @@
+version: '3.8'
+
+services:
+  # 1. MongoDB Database
+  mongodb:
+    image: mongo:6.0
+    container_name: retailiq-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - retailiq-network
+
+  # 2. Apache Kafka Messaging Backbone
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0
+    container_name: retailiq-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - retailiq-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.0
+    container_name: retailiq-kafka
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - retailiq-network
+
+  # 3. Python ML Clustering Service
+  ml-service:
+    build:
+      context: ./ml-service
+    container_name: retailiq-ml-service
+    ports:
+      - "5000:5000"
+    networks:
+      - retailiq-network
+
+  # 4. Authentication and JWT Service
+  auth-service:
+    build:
+      context: ./backend/auth-service
+    container_name: retailiq-auth-service
+    ports:
+      - "8085:8085"
+    depends_on:
+      - mongodb
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/retailiq_auth
+      JWT_SECRET: dGhpcy1pcy1hLXN1cGVyLXNlY3VyZS0yNTYtYml0LXNlY3JldC1rZXktZm9yLXJldGFpbGlxLWZ1bGwtc3RhY2stYXBwbGljYXRpb24=
+    networks:
+      - retailiq-network
+
+  # 5. Customer CRUD Service
+  customer-service:
+    build:
+      context: ./backend/customer-service
+    container_name: retailiq-customer-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongodb
+      - kafka
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/retailiq_customer
+      KAFKA_SERVERS: kafka:29092
+    networks:
+      - retailiq-network
+
+  # 6. Customer Cohort Segmentation Service
+  segmentation-service:
+    build:
+      context: ./backend/segmentation-service
+    container_name: retailiq-segmentation-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - mongodb
+      - kafka
+      - ml-service
+      - customer-service
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/retailiq_segmentation
+      KAFKA_SERVERS: kafka:29092
+      ML_SERVICE_URL: http://ml-service:5000
+      CUSTOMER_SERVICE_URL: http://customer-service:8081
+    networks:
+      - retailiq-network
+
+  # 7. Lead Scoring Service
+  lead-service:
+    build:
+      context: ./backend/lead-service
+    container_name: retailiq-lead-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - mongodb
+      - kafka
+      - customer-service
+      - segmentation-service
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/retailiq_lead
+      KAFKA_SERVERS: kafka:29092
+      CUSTOMER_SERVICE_URL: http://customer-service:8081
+      SEGMENTATION_SERVICE_URL: http://segmentation-service:8082
+    networks:
+      - retailiq-network
+
+  # 8. Campaign Dispatch Service
+  campaign-service:
+    build:
+      context: ./backend/campaign-service
+    container_name: retailiq-campaign-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      - mongodb
+      - kafka
+      - segmentation-service
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/retailiq_campaign
+      KAFKA_SERVERS: kafka:29092
+      SEGMENTATION_SERVICE_URL: http://segmentation-service:8082
+    networks:
+      - retailiq-network
+
+  # 9. API Gateway Routing
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+    container_name: retailiq-api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - auth-service
+      - customer-service
+      - segmentation-service
+      - lead-service
+      - campaign-service
+    environment:
+      AUTH_SERVICE_URL: http://auth-service:8085
+      CUSTOMER_SERVICE_URL: http://customer-service:8081
+      SEGMENTATION_SERVICE_URL: http://segmentation-service:8082
+      LEAD_SERVICE_URL: http://lead-service:8083
+      CAMPAIGN_SERVICE_URL: http://campaign-service:8084
+      JWT_SECRET: dGhpcy1pcy1hLXN1cGVyLXNlY3VyZS0yNTYtYml0LXNlY3JldC1rZXktZm9yLXJldGFpbGlxLWZ1bGwtc3RhY2stYXBwbGljYXRpb24=
+    networks:
+      - retailiq-network
+
+  # 10. Web UI Frontend
+  frontend:
+    build:
+      context: ./frontend
+    container_name: retailiq-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - retailiq-network
+
+networks:
+  retailiq-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+    driver: local
