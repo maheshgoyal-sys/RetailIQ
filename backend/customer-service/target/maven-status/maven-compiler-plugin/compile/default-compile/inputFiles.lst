@@ -1,7 +1,0 @@
-D:\SpringBoot\Project_3\backend\customer-service\src\main\java\com\retailiq\customer\CustomerApplication.java
-D:\SpringBoot\Project_3\backend\customer-service\src\main\java\com\retailiq\customer\controller\CustomerController.java
-D:\SpringBoot\Project_3\backend\customer-service\src\main\java\com\retailiq\customer\repository\CustomerRepository.java
-D:\SpringBoot\Project_3\backend\customer-service\src\main\java\com\retailiq\customer\service\CustomerService.java
-D:\SpringBoot\Project_3\backend\customer-service\src\main\java\com\retailiq\customer\exception\ApiExceptionHandler.java
-D:\SpringBoot\Project_3\backend\customer-service\src\main\java\com\retailiq\customer\init\DataInitializer.java
-D:\SpringBoot\Project_3\backend\customer-service\src\main\java\com\retailiq\customer\model\Customer.java
