@@ -106,14 +106,14 @@ export default function Campaigns() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center flex-wrap gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">Campaigns</h2>
           <p className="text-slate-500 text-sm mt-1">Design, execute, and monitor conversions of targeted retail campaigns.</p>
         </div>
         <button
           onClick={() => setModalOpen(true)}
-          className="glow-btn flex items-center gap-2 bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-500 hover:to-indigo-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-primary-500/20 transition-all duration-300"
+          className="glow-btn flex items-center gap-2 bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-500 hover:to-indigo-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-primary-500/20 transition-all duration-300 self-start sm:self-auto"
         >
           <Plus className="h-4 w-4" />
           <span>New Campaign</span>
@@ -193,8 +193,8 @@ export default function Campaigns() {
 
       {/* Creation Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white border border-slate-100 w-full max-w-lg rounded-3xl p-6 shadow-2xl animate-scale-in text-left flex flex-col gap-5">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in overflow-y-auto">
+          <div className="bg-white border border-slate-100 w-full max-w-lg rounded-3xl p-6 shadow-2xl animate-scale-in text-left flex flex-col gap-5 my-8">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
               <h3 className="text-xl font-extrabold text-slate-900">Create Targeted Campaign</h3>
               <button
@@ -218,7 +218,7 @@ export default function Campaigns() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Target Cohort</label>
                   <select

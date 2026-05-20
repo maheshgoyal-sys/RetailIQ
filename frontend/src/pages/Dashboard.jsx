@@ -71,19 +71,19 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       {/* Top Welcome Title */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">Dashboard</h2>
           <p className="text-slate-500 text-sm mt-1">Real-time overview of customer intelligence, segments and conversions.</p>
         </div>
-        <div className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+        <div className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 self-start sm:self-auto">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
           <span>GET /api/dashboard 200 OK</span>
         </div>
       </div>
 
       {/* KPI Section */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {kpis.map((kpi) => {
           const Icon = kpi.icon;
           return (
@@ -110,9 +110,9 @@ export default function Dashboard() {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Pie Chart Card */}
-        <div className="glass-card p-6 rounded-2xl border border-slate-100 col-span-1 flex flex-col justify-between">
+        <div className="glass-card p-6 rounded-2xl border border-slate-100 flex flex-col justify-between">
           <div>
             <h3 className="text-base font-bold text-slate-900">Segment distribution</h3>
             <p className="text-xs text-slate-500 mt-0.5">K-Means Customer Clustering</p>
@@ -161,7 +161,7 @@ export default function Dashboard() {
         </div>
 
         {/* Bar Chart Card */}
-        <div className="glass-card p-6 rounded-2xl border border-slate-100 col-span-2 flex flex-col justify-between">
+        <div className="glass-card p-6 rounded-2xl border border-slate-100 lg:col-span-2 flex flex-col justify-between">
           <div>
             <h3 className="text-base font-bold text-slate-900">Monthly leads generated</h3>
             <p className="text-xs text-slate-500 mt-0.5 font-medium">Conversion pipeline status breakdown</p>
@@ -193,7 +193,7 @@ export default function Dashboard() {
       </div>
 
       {/* Segments Bottom Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {segmentCards.map((card) => (
           <div key={card.name} className="glass-card p-6 rounded-2xl border border-slate-100 flex flex-col justify-between hover:shadow-premium-hover transition-all duration-300">
             <div className="flex justify-between items-start">

@@ -114,12 +114,12 @@ export default function Leads() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center flex-wrap gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">Leads</h2>
           <p className="text-slate-500 text-sm mt-1">Nurture high-score leads generated from targeted high-value segments.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
           {/* View Toggles */}
           <div className="bg-slate-100 p-1 rounded-xl flex items-center border border-slate-200">
             <button
@@ -266,7 +266,7 @@ export default function Leads() {
         </div>
       ) : (
         /* KANBAN BOARD VIEW (Dual Interactive Mode) */
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {kanbanColumns.map((col) => {
             const columnLeads = filtered.filter(l => l.status.toLowerCase() === col.toLowerCase());
             return (

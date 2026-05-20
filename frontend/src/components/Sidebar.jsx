@@ -8,11 +8,12 @@ import {
   Send, 
   Cpu, 
   LogOut,
-  TrendingUp
+  TrendingUp,
+  X
 } from 'lucide-react';
 import { authAPI } from '../services/api';
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }) {
   const navigate = useNavigate();
   const user = authAPI.getUser();
 
@@ -31,16 +32,28 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="w-64 bg-slate-900 text-slate-300 min-h-screen flex flex-col border-r border-slate-800 shadow-premium">
+    <aside className={`
+      fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 min-h-screen flex flex-col border-r border-slate-800 shadow-premium
+      transform transition-transform duration-300 ease-in-out
+      ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+    `}>
       {/* Brand Header */}
-      <div className="p-6 border-b border-slate-800 flex items-center gap-3">
-        <div className="bg-primary-600 text-white p-2 rounded-xl shadow-lg shadow-primary-500/20">
-          <TrendingUp className="h-6 w-6" />
+      <div className="p-6 border-b border-slate-800 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="bg-primary-600 text-white p-2 rounded-xl shadow-lg shadow-primary-500/20">
+            <TrendingUp className="h-6 w-6" />
+          </div>
+          <div>
+            <h1 className="text-xl font-extrabold text-white tracking-tight">RetailIQ</h1>
+            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Segmentation Suite</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-extrabold text-white tracking-tight">RetailIQ</h1>
-          <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Segmentation Suite</p>
-        </div>
+        <button 
+          onClick={onClose}
+          className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white md:hidden transition-colors"
+        >
+          <X className="h-5 w-5" />
+        </button>
       </div>
 
       {/* User Card */}
@@ -66,6 +79,7 @@ export default function Sidebar() {
             <NavLink
               key={item.to}
               to={item.to}
+              onClick={onClose}
               className={({ isActive }) => `
                 flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
                 ${isActive 

@@ -291,7 +291,7 @@ export default function Customers() {
         </div>
 
         {/* Pagination Footer */}
-        <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between flex-wrap gap-4 text-xs font-semibold text-slate-500">
+        <div className="p-4 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-semibold text-slate-500">
           <span>Showing {customers.length} of {totalElements} customers</span>
           <div className="flex items-center gap-2">
             <button
@@ -315,8 +315,8 @@ export default function Customers() {
 
       {/* CRUD Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-100 w-full max-w-lg rounded-3xl p-6 shadow-2xl animate-scale-in text-left flex flex-col gap-5">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white border border-slate-100 w-full max-w-lg rounded-3xl p-6 shadow-2xl animate-scale-in text-left flex flex-col gap-5 my-8">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
               <h3 className="text-xl font-extrabold text-slate-900">
                 {selectedCustomer ? 'Edit Customer Details' : 'Add New Retail Customer'}
@@ -330,7 +330,7 @@ export default function Customers() {
             </div>
 
             <form onSubmit={handleSaveCustomer} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Full Name</label>
                   <input
@@ -355,7 +355,7 @@ export default function Customers() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Age</label>
                   <input
@@ -391,7 +391,7 @@ export default function Customers() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5 col-span-1">
                   <label className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Phone</label>
                   <input

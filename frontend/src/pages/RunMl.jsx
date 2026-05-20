@@ -53,12 +53,12 @@ export default function RunMl() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center flex-wrap gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">Run ML model</h2>
           <p className="text-slate-500 text-sm mt-1">Configure hyper-parameters to execute K-Means clustering dynamically.</p>
         </div>
-        <div className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+        <div className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 self-start sm:self-auto">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
           <span>GET /api/dashboard 200 OK</span>
         </div>
