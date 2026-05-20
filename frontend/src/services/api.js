@@ -90,6 +90,39 @@ export const authAPI = {
       return { message: 'Registered successfully (mock fallback)' };
     }
   },
+  loginWithSocial: async (provider, email, username) => {
+    // Standard mock social login for high-fidelity interactive flow
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    const role = provider === 'guest' ? 'MARKETER' : 'ADMIN';
+    const dummyUser = {
+      accessToken: `dummy_jwt_${provider}_${Date.now()}`,
+      username: username || `${provider.charAt(0).toUpperCase() + provider.slice(1)} User`,
+      email: email || `${provider}@retailiq.com`,
+      roles: [role],
+      isGuest: provider === 'guest'
+    };
+    localStorage.setItem('token', dummyUser.accessToken);
+    localStorage.setItem('user', JSON.stringify(dummyUser));
+    return dummyUser;
+  },
+  sendPasswordResetCode: async (email) => {
+    // Mock sending verification code
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    return { success: true, message: `Verification code sent to ${email}` };
+  },
+  verifyPasswordResetCode: async (email, code) => {
+    // Mock code verification (accepts 1234 or any 4 digit code for demo ease)
+    await new Promise(resolve => setTimeout(resolve, 800));
+    if (code && code.length === 4) {
+      return { success: true, message: 'Code verified successfully' };
+    }
+    throw new Error('Invalid verification code. Please enter any 4-digit code.');
+  },
+  resetPassword: async (email, newPassword) => {
+    // Mock password update
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    return { success: true, message: 'Password updated successfully' };
+  },
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
