@@ -49,36 +49,61 @@ public class LeadService {
         public List<CustomerDto> content;
     }
 
-    public List<Lead> getLeads(String status, String segmentId) {
-        if (status != null && !status.isEmpty() && segmentId != null && !segmentId.isEmpty()) {
-            return leadRepository.findByStatusIgnoreCaseAndSegmentId(status, segmentId);
-        } else if (status != null && !status.isEmpty()) {
-            return leadRepository.findByStatusIgnoreCase(status);
-        } else if (segmentId != null && !segmentId.isEmpty()) {
-            return leadRepository.findBySegmentId(segmentId);
+    public List<Lead> getLeads(String userId, String status, String segmentId) {
+        boolean isGuest = (userId == null || userId.trim().isEmpty() || userId.equalsIgnoreCase("guest"));
+        boolean hasStatus = (status != null && !status.isEmpty());
+        boolean hasSegment = (segmentId != null && !segmentId.isEmpty());
+
+        if (isGuest) {
+            if (hasStatus && hasSegment) return leadRepository.findForGuestByStatusAndSegmentId(status, segmentId);
+            if (hasStatus) return leadRepository.findForGuestByStatus(status);
+            if (hasSegment) return leadRepository.findForGuestBySegmentId(segmentId);
+            return leadRepository.findForGuest();
         } else {
-            return leadRepository.findAll();
+            if (hasStatus && hasSegment) return leadRepository.findByUserIdAndStatusIgnoreCaseAndSegmentId(userId, status, segmentId);
+            if (hasStatus) return leadRepository.findByUserIdAndStatusIgnoreCase(userId, status);
+            if (hasSegment) return leadRepository.findByUserIdAndSegmentId(userId, segmentId);
+            return leadRepository.findByUserId(userId);
         }
     }
 
-    public Lead updateLeadStatus(String id, String status) {
+    public Lead updateLeadStatus(String id, String status, String userId) {
         Lead lead = leadRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Lead not found with ID: " + id));
+        if (!isAuthorizedUser(lead, userId)) {
+            throw new NoSuchElementException("Lead not found with ID: " + id);
+        }
         lead.setStatus(status.toUpperCase());
         return leadRepository.save(lead);
     }
 
-    public Map<String, Object> generateLeadsJob() {
-        log.info("Starting lead scoring & generation routine...");
+    private boolean isGuest(String userId) {
+        return userId == null || userId.trim().isEmpty() || userId.equalsIgnoreCase("guest");
+    }
 
-        // 1. Fetch segments from segmentation-service
+    private boolean isAuthorizedUser(Lead lead, String userId) {
+        if (isGuest(userId)) {
+            return lead.getUserId() == null || lead.getUserId().trim().isEmpty() || lead.getUserId().equalsIgnoreCase("guest");
+        }
+        return userId.equals(lead.getUserId());
+    }
+
+    public Map<String, Object> generateLeadsJob(String userId) {
+        log.info("Starting lead scoring & generation routine for userId={}...", userId);
+        boolean isGuest = (userId == null || userId.trim().isEmpty() || userId.equalsIgnoreCase("guest"));
+        final String effectiveUserId = isGuest ? "guest" : userId;
+
+        // 1. Fetch segments from segmentation-service (user-scoped)
         List<SegmentDto> segments = new ArrayList<>();
         try {
             String url = segmentationServiceUrl + "/api/segments";
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.set("X-User-Id", effectiveUserId);
+            org.springframework.http.HttpEntity<Void> entity = new org.springframework.http.HttpEntity<>(headers);
             ResponseEntity<List<SegmentDto>> response = restTemplate.exchange(
                     url,
                     HttpMethod.GET,
-                    null,
+                    entity,
                     new ParameterizedTypeReference<List<SegmentDto>>() {}
             );
             if (response.getBody() != null) {
@@ -88,11 +113,14 @@ public class LeadService {
             log.error("Failed to fetch segments from segmentation-service: {}", e.getMessage());
         }
 
-        // 2. Fetch customers from customer-service to get their spending stats
+        // 2. Fetch customers from customer-service (user-scoped)
         List<CustomerDto> customers = new ArrayList<>();
         try {
             String url = customerServiceUrl + "/api/customers?size=1000";
-            ResponseEntity<PaginatedCustomers> response = restTemplate.getForEntity(url, PaginatedCustomers.class);
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.set("X-User-Id", effectiveUserId);
+            org.springframework.http.HttpEntity<Void> entity = new org.springframework.http.HttpEntity<>(headers);
+            ResponseEntity<PaginatedCustomers> response = restTemplate.exchange(url, HttpMethod.GET, entity, PaginatedCustomers.class);
             if (response.getBody() != null && response.getBody().content != null) {
                 customers = response.getBody().content;
             }
@@ -116,18 +144,14 @@ public class LeadService {
         // 3. For high-performing segments (High value loyal, Regular buyers), score and generate leads
         for (SegmentDto seg : segments) {
             String segName = seg.segmentName.toLowerCase();
-            // Focus lead generation on high-value clusters
             if (segName.contains("high") || segName.contains("loyal") || segName.contains("regular")) {
                 if (seg.customerIds != null) {
                     for (String custId : seg.customerIds) {
                         CustomerDto c = customerMap.get(custId);
                         if (c != null) {
-                            // Run Lead Scoring Heuristic (RFM derived score)
                             int score = calculateLeadScore(c);
-                            
-                            // Check if lead already exists to avoid duplicates
                             boolean exists = leadRepository.findAll().stream()
-                                    .anyMatch(l -> l.getCustomerId().equals(c.id));
+                                    .anyMatch(l -> l.getCustomerId().equals(c.id) && effectiveUserId.equals(l.getUserId()));
 
                             if (score >= 70 && !exists) {
                                 Lead lead = Lead.builder()
@@ -140,6 +164,7 @@ public class LeadService {
                                         .status("NEW")
                                         .campaign(suggestCampaign(seg.segmentName))
                                         .createdAt(LocalDateTime.now())
+                                        .userId(effectiveUserId)
                                         .build();
 
                                 newlyGeneratedLeads.add(leadRepository.save(lead));

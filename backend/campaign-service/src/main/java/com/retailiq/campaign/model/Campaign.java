@@ -27,4 +27,5 @@ public class Campaign {
     private int sentCount;
     private double openRate; // 0 to 100
     private LocalDateTime createdAt;
+    private String userId;
 }

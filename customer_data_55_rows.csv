@@ -1,0 +1,56 @@
+name,email,phone,age,gender,city,totalSpend,purchaseCount,lastPurchaseDate,productCategories,registrationDate,segment
+Alice Example,alice@example.com,9876543210,34,Female,Bengaluru,12345.67,14,05/15/2026,Apparel,05/01/2026,High value loyal
+Bob Example,bob@example.com,9876543211,29,Male,Hyderabad,4500.5,6,05/20/2026,Electronics,05/03/2026,Regular buyers
+Ravi Sharma,ravi1@example.com,9876543212,31,Male,Delhi,8900.2,10,05/18/2026,Groceries,05/02/2026,High value loyal
+Neha Verma,neha1@example.com,9876543213,26,Female,Mumbai,3200.75,5,05/10/2026,Beauty,05/04/2026,Regular buyers
+Amit Singh,amit1@example.com,9876543214,40,Male,Pune,15000.0,20,05/22/2026,Electronics,05/01/2026,High value loyal
+Pooja Mehta,pooja1@example.com,9876543215,28,Female,Chennai,4100.6,7,05/19/2026,Fashion,05/06/2026,Regular buyers
+Rahul Gupta,rahul1@example.com,9876543216,35,Male,Kolkata,9800.9,12,05/17/2026,Home Decor,05/02/2026,High value loyal
+Sneha Kapoor,sneha1@example.com,9876543217,24,Female,Ahmedabad,2300.4,4,05/12/2026,Beauty,05/05/2026,New users
+Vikas Yadav,vikas1@example.com,9876543218,38,Male,Lucknow,7600.8,9,05/16/2026,Groceries,05/03/2026,Regular buyers
+Anjali Desai,anjali1@example.com,9876543219,27,Female,Bengaluru,5200.3,8,05/21/2026,Apparel,05/07/2026,Regular buyers
+Suresh Reddy,suresh1@example.com,9876543220,42,Male,Hyderabad,18000.5,25,05/23/2026,Electronics,05/01/2026,High value loyal
+Karan Malhotra,karan1@example.com,9876543221,30,Male,Delhi,6100.7,11,05/14/2026,Sports,05/06/2026,Regular buyers
+Meera Iyer,meera1@example.com,9876543222,33,Female,Chennai,9400.2,13,05/18/2026,Fashion,05/02/2026,High value loyal
+Arjun Nair,arjun1@example.com,9876543223,36,Male,Kochi,8700.5,10,05/20/2026,Home Decor,05/04/2026,Regular buyers
+Divya Jain,divya1@example.com,9876543224,25,Female,Delhi,2900.9,5,05/11/2026,Beauty,05/05/2026,New users
+Nikhil Bansal,nikhil1@example.com,9876543225,32,Male,Pune,11200.4,15,05/22/2026,Electronics,05/03/2026,High value loyal
+Isha Khanna,isha1@example.com,9876543226,29,Female,Mumbai,5400.6,8,05/19/2026,Apparel,05/06/2026,Regular buyers
+Harsh Vardhan,harsh1@example.com,9876543227,37,Male,Delhi,9900.3,12,05/17/2026,Groceries,05/02/2026,High value loyal
+Komal Sharma,komal1@example.com,9876543228,27,Female,Jaipur,3800.5,6,05/15/2026,Fashion,05/04/2026,Regular buyers
+Manish Agarwal,manish1@example.com,9876543229,41,Male,Bengaluru,16000.9,22,05/21/2026,Electronics,05/01/2026,High value loyal
+Tanya Singh,tanya1@example.com,9876543230,23,Female,Hyderabad,2100.3,3,05/13/2026,Beauty,05/07/2026,New users
+Aditya Roy,aditya1@example.com,9876543231,34,Male,Kolkata,7800.6,10,05/18/2026,Sports,05/03/2026,Regular buyers
+Shreya Patel,shreya1@example.com,9876543232,26,Female,Ahmedabad,4600.8,7,05/16/2026,Apparel,05/05/2026,Regular buyers
+Rohit Kumar,rohit1@example.com,9876543233,39,Male,Lucknow,13500.2,18,05/23/2026,Electronics,05/02/2026,High value loyal
+Pallavi Das,pallavi1@example.com,9876543234,28,Female,Pune,5200.9,8,05/19/2026,Fashion,05/06/2026,Regular buyers
+Sameer Sheikh,sameer1@example.com,9876543235,33,Male,Mumbai,8700.4,11,05/20/2026,Groceries,05/03/2026,High value loyal
+Ritika Jain,ritika1@example.com,9876543236,25,Female,Delhi,3100.7,5,05/14/2026,Beauty,05/05/2026,New users
+Yash Mehta,yash1@example.com,9876543237,31,Male,Bengaluru,9200.5,12,05/22/2026,Electronics,05/01/2026,High value loyal
+Naina Kapoor,naina1@example.com,9876543238,27,Female,Chennai,4400.6,7,05/18/2026,Apparel,05/04/2026,Regular buyers
+Deepak Verma,deepak1@example.com,9876543239,36,Male,Delhi,10100.9,14,05/21/2026,Sports,05/02/2026,High value loyal
+Sonal Gupta,sonal1@example.com,9876543240,29,Female,Kolkata,3900.2,6,05/15/2026,Beauty,05/06/2026,Regular buyers
+Vivek Raina,vivek1@example.com,9876543241,40,Male,Pune,14500.7,19,05/23/2026,Electronics,05/01/2026,High value loyal
+Priya Nair,priya1@example.com,9876543242,24,Female,Kochi,2600.5,4,05/12/2026,Fashion,05/05/2026,New users
+Aman Jha,aman1@example.com,9876543243,35,Male,Lucknow,8800.3,11,05/20/2026,Groceries,05/03/2026,Regular buyers
+Swati Sharma,swati1@example.com,9876543244,30,Female,Delhi,6200.8,9,05/18/2026,Apparel,05/04/2026,Regular buyers
+Tarun Singh,tarun1@example.com,9876543245,38,Male,Hyderabad,17000.4,24,05/24/2026,Electronics,05/01/2026,High value loyal
+Mehul Desai,mehul1@example.com,9876543246,27,Male,Ahmedabad,4700.6,7,05/16/2026,Fashion,05/06/2026,Regular buyers
+Ankita Bose,ankita1@example.com,9876543247,26,Female,Kolkata,3500.9,5,05/13/2026,Beauty,05/05/2026,New users
+Rajat Verma,rajat1@example.com,9876543248,32,Male,Delhi,9500.5,13,05/21/2026,Sports,05/02/2026,High value loyal
+Shubham Yadav,shubham1@example.com,9876543249,28,Male,Pune,5600.7,8,05/19/2026,Groceries,05/03/2026,Regular buyers
+Kavya Iyer,kavya1@example.com,9876543250,25,Female,Chennai,2800.4,4,05/11/2026,Beauty,05/05/2026,New users
+Harini Reddy,harini1@example.com,9876543251,34,Female,Hyderabad,12500.6,16,05/22/2026,Electronics,05/01/2026,High value loyal
+Devansh Gupta,devansh1@example.com,9876543252,29,Male,Delhi,6800.9,9,05/18/2026,Apparel,05/04/2026,Regular buyers
+Ishaan Malhotra,ishaan1@example.com,9876543253,37,Male,Mumbai,14000.3,20,05/23/2026,Sports,05/02/2026,High value loyal
+Tanvi Jain,tanvi1@example.com,9876543254,23,Female,Jaipur,2200.5,3,05/10/2026,Beauty,05/06/2026,New users
+Mohit Agarwal,mohit1@example.com,9876543255,33,Male,Delhi,7200.4,10,05/18/2026,Electronics,05/04/2026,Regular buyers
+Riya Soni,riya1@example.com,9876543256,27,Female,Pune,4100.6,6,05/16/2026,Fashion,05/05/2026,Regular buyers
+Gaurav Taneja,gaurav1@example.com,9876543257,36,Male,Bengaluru,15500.2,21,05/22/2026,Electronics,05/01/2026,High value loyal
+Nandini Joshi,nandini1@example.com,9876543258,24,Female,Mumbai,2600.9,4,05/12/2026,Beauty,05/06/2026,New users
+Sandeep Kumar,sandeep1@example.com,9876543259,39,Male,Lucknow,9800.5,13,05/21/2026,Groceries,05/02/2026,High value loyal
+Ayesha Khan,ayesha1@example.com,9876543260,28,Female,Hyderabad,5400.7,8,05/19/2026,Apparel,05/03/2026,Regular buyers
+Chirag Mehta,chirag1@example.com,9876543261,31,Male,Ahmedabad,8700.3,11,05/20/2026,Sports,05/04/2026,High value loyal
+Simran Kaur,simran1@example.com,9876543262,26,Female,Delhi,3300.5,5,05/14/2026,Beauty,05/05/2026,New users
+Pranav Dixit,pranav1@example.com,9876543263,35,Male,Kolkata,11200.8,15,05/23/2026,Electronics,05/01/2026,High value loyal
+Neelesh Gupta,neelesh1@example.com,9876543264,30,Male,Chennai,6100.6,9,05/18/2026,Apparel,05/03/2026,Regular buyers

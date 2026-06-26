@@ -30,4 +30,5 @@ public class Customer {
     private List<String> productCategories;
     private LocalDate registrationDate;
     private String segment; // e.g., "High Value", "Loyal", "At Risk", "New Customer"
+    private String userId;
 }

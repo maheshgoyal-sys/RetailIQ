@@ -26,4 +26,5 @@ public class Lead {
     private String status; // "NEW", "CONTACTED", "CONVERTED", "REJECTED"
     private String campaign;
     private LocalDateTime createdAt;
+    private String userId;
 }

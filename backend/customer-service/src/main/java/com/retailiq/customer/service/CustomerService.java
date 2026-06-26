@@ -1,9 +1,18 @@
 package com.retailiq.customer.service;
 
-import com.retailiq.customer.model.Customer;
-import com.retailiq.customer.repository.CustomerRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -17,12 +26,10 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import com.retailiq.customer.model.Customer;
+import com.retailiq.customer.repository.CustomerRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -36,9 +43,19 @@ public class CustomerService {
 
     private static final String TOPIC = "customer-events";
 
-    public Page<Customer> getCustomers(String city, String gender, String search, Pageable pageable) {
+    public Page<Customer> getCustomers(String userId, String city, String gender, String search, String segment, Pageable pageable) {
         Query query = new Query().with(pageable);
         List<Criteria> criteriaList = new ArrayList<>();
+
+        if (userId == null || userId.trim().isEmpty() || userId.equalsIgnoreCase("guest")) {
+            criteriaList.add(new Criteria().orOperator(
+                    Criteria.where("userId").is("guest"),
+                    Criteria.where("userId").exists(false),
+                    Criteria.where("userId").is(null)
+            ));
+        } else {
+            criteriaList.add(Criteria.where("userId").is(userId));
+        }
 
         if (city != null && !city.trim().isEmpty()) {
             criteriaList.add(Criteria.where("city").regex("^" + city.trim() + "$", "i"));
@@ -54,6 +71,10 @@ public class CustomerService {
             criteriaList.add(searchCriteria);
         }
 
+        if (segment != null && !segment.trim().isEmpty()) {
+            criteriaList.add(Criteria.where("segment").regex("^" + segment.trim() + "$", "i"));
+        }
+
         if (!criteriaList.isEmpty()) {
             query.addCriteria(new Criteria().andOperator(criteriaList.toArray(new Criteria[0])));
         }
@@ -64,7 +85,8 @@ public class CustomerService {
         return new PageImpl<>(list, pageable, total);
     }
 
-    public Customer createCustomer(Customer customer) {
+    public Customer createCustomer(Customer customer, String userId) {
+        customer.setUserId(userId != null && !userId.trim().isEmpty() ? userId : "guest");
         if (customer.getRegistrationDate() == null) {
             customer.setRegistrationDate(LocalDate.now());
         }
@@ -73,13 +95,24 @@ public class CustomerService {
         return saved;
     }
 
-    public Optional<Customer> getCustomerById(String id) {
-        return customerRepository.findById(id);
+    public Optional<Customer> getCustomerById(String id, String userId) {
+        Optional<Customer> customerOpt = customerRepository.findById(id);
+        if (customerOpt.isEmpty()) {
+            return Optional.empty();
+        }
+        Customer customer = customerOpt.get();
+        if (isGuestUser(userId)) {
+            return isGuestCustomer(customer) ? customerOpt : Optional.empty();
+        }
+        return userId.equals(customer.getUserId()) ? customerOpt : Optional.empty();
     }
 
-    public Customer updateCustomer(String id, Customer updated) {
+    public Customer updateCustomer(String id, Customer updated, String userId) {
         Customer existing = customerRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Customer not found with id: " + id));
+        if (!isAuthorizedUser(existing, userId)) {
+            throw new NoSuchElementException("Customer not found with id: " + id);
+        }
 
         existing.setName(updated.getName());
         existing.setEmail(updated.getEmail());
@@ -98,16 +131,34 @@ public class CustomerService {
         return saved;
     }
 
-    public void deleteCustomer(String id) {
+    public void deleteCustomer(String id, String userId) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Customer not found with id: " + id));
+        if (!isAuthorizedUser(customer, userId)) {
+            throw new NoSuchElementException("Customer not found with id: " + id);
+        }
         customerRepository.deleteById(id);
         sendKafkaEvent("CUSTOMER_DELETED", Map.of("id", id, "email", customer.getEmail()));
     }
 
-    public int importCustomersCsv(MultipartFile file) {
+    private boolean isGuestUser(String userId) {
+        return userId == null || userId.trim().isEmpty() || userId.equalsIgnoreCase("guest");
+    }
+
+    private boolean isGuestCustomer(Customer customer) {
+        return customer.getUserId() == null || customer.getUserId().trim().isEmpty() || customer.getUserId().equalsIgnoreCase("guest");
+    }
+
+    private boolean isAuthorizedUser(Customer customer, String userId) {
+        if (isGuestUser(userId)) {
+            return isGuestCustomer(customer);
+        }
+        return userId.equals(customer.getUserId());
+    }
+
+    public int importCustomersCsv(MultipartFile file, String userId) {
         int count = 0;
-        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("[yyyy-MM-dd][MM/dd/yyyy][M/d/yyyy]");
 
         try (BufferedReader fileReader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
              CSVParser csvParser = new CSVParser(fileReader, CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim())) {
@@ -153,6 +204,7 @@ public class CustomerService {
                             .productCategories(productCategories)
                             .registrationDate(registrationDate)
                             .segment(segment)
+                            .userId(userId != null && !userId.trim().isEmpty() ? userId : "guest")
                             .build();
 
                     batchList.add(customer);

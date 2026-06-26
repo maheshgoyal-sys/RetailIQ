@@ -35,12 +35,11 @@ export default function Segments() {
     // Fetch customers in this segment
     setLoadingCustomers(true);
     try {
-      // Fetch matching segment customers from mock database
-      const res = await customerAPI.getCustomers(0, 100);
-      const matches = res.content.filter(c => c.segment?.toLowerCase() === segName.toLowerCase());
+      // Fetch matching segment customers from database (max 10 for the UI list)
+      const res = await customerAPI.getCustomers(0, 10, '', '', '', segName);
       setSegmentCustomers(prev => ({
         ...prev,
-        [segName]: matches
+        [segName]: res.content
       }));
     } catch (error) {
       toast.error('Failed to load segment customers');

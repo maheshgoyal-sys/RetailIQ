@@ -22,8 +22,9 @@ public class SegmentationEventListener {
         try {
             String eventType = (String) event.get("eventType");
             if ("SEGMENTATION_RUN_COMPLETED".equals(eventType)) {
-                log.info("Triggering automatic high-score lead generation due to segment updates...");
-                Map<String, Object> result = leadService.generateLeadsJob();
+                String userId = (String) event.getOrDefault("userId", "guest");
+                log.info("Triggering automatic high-score lead generation due to segment updates for userId={}...", userId);
+                Map<String, Object> result = leadService.generateLeadsJob(userId);
                 log.info("Auto lead generation results: {}", result);
             }
         } catch (Exception e) {

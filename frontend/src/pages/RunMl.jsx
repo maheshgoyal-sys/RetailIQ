@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Cpu, Sparkles, Terminal, Code } from 'lucide-react';
-import { segmentAPI } from '../services/api';
+import { segmentAPI, authAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 export default function RunMl() {
@@ -15,6 +15,10 @@ export default function RunMl() {
   });
   const [running, setRunning] = useState(false);
 
+  const user = authAPI.getUser();
+  const isGuest = user?.isGuest === true;
+  const canRun = !isGuest;
+
   const handleCheckboxChange = (key) => {
     setFeatures(prev => ({
       ...prev,
@@ -27,6 +31,10 @@ export default function RunMl() {
   };
 
   const handleRunSegmentation = async () => {
+    if (!canRun) {
+      toast.error('Guest mode is read-only. Login to run live segmentation.');
+      return;
+    }
     setRunning(true);
     const loader = toast.loading('Contacting API Gateway and invoking Python Flask service...');
     try {
@@ -56,7 +64,9 @@ export default function RunMl() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">Run ML model</h2>
-          <p className="text-slate-500 text-sm mt-1">Configure hyper-parameters to execute K-Means clustering dynamically.</p>
+          <p className="text-slate-500 text-sm mt-1">
+            {isGuest ? 'Guest mode is read-only. Login to execute live ML segmentation on your own data.' : 'Configure hyper-parameters to execute K-Means clustering dynamically.'}
+          </p>
         </div>
         <div className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 self-start sm:self-auto">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -162,11 +172,11 @@ export default function RunMl() {
           {/* Trigger button */}
           <button
             onClick={handleRunSegmentation}
-            disabled={running}
-            className="glow-btn bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-500 hover:to-indigo-500 text-white rounded-xl py-3 font-bold text-sm tracking-wide shadow-lg shadow-primary-500/20 flex items-center justify-center gap-2 transition-all duration-300 mt-2 disabled:opacity-50"
+            disabled={running || !canRun}
+            className={`glow-btn ${canRun ? 'bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-500 hover:to-indigo-500 text-white' : 'bg-slate-100 text-slate-400 cursor-not-allowed'} rounded-xl py-3 font-bold text-sm tracking-wide shadow-lg shadow-primary-500/20 flex items-center justify-center gap-2 transition-all duration-300 mt-2 disabled:opacity-50`}
           >
             <Cpu className="h-5 w-5" />
-            <span>{running ? 'Processing Segmentation Job...' : 'Run segmentation'}</span>
+            <span>{running ? 'Processing Segmentation Job...' : canRun ? 'Run segmentation' : 'Guest Read-Only'}</span>
           </button>
         </div>
 

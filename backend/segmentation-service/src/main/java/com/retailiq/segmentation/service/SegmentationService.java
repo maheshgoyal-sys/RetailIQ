@@ -54,16 +54,19 @@ public class SegmentationService {
         public List<CustomerDto> content;
     }
 
-    public List<Segment> getAllSegments() {
-        return segmentRepository.findAll();
+    public List<Segment> getAllSegments(String userId) {
+        if (userId == null || userId.trim().isEmpty() || userId.equalsIgnoreCase("guest")) {
+            return segmentRepository.findForGuest();
+        }
+        return segmentRepository.findByUserId(userId);
     }
 
     public Optional<Segment> getSegmentById(String id) {
         return segmentRepository.findById(id);
     }
 
-    public Map<String, Object> getSegmentsSummary() {
-        List<Segment> segments = segmentRepository.findAll();
+    public Map<String, Object> getSegmentsSummary(String userId) {
+        List<Segment> segments = getAllSegments(userId);
         long totalCustomers = 0;
         double sumAvgSpend = 0;
 
@@ -90,18 +93,23 @@ public class SegmentationService {
         return summary;
     }
 
-    public Map<String, Object> runSegmentationJob() {
-        log.info("Triggering customer segmentation job...");
+    public Map<String, Object> runSegmentationJob(String userId) {
+        log.info("Triggering customer segmentation job for userId={}...", userId);
 
-        // 1. Fetch all customers from customer-service
+        // 1. Fetch user-scoped customers from customer-service
         List<CustomerDto> customers = new ArrayList<>();
         try {
+            String userIdParam = (userId == null || userId.trim().isEmpty() || userId.equalsIgnoreCase("guest"))
+                    ? "guest" : userId;
             String url = customerServiceUrl + "/api/customers?size=1000";
-            ResponseEntity<PaginatedCustomers> response = restTemplate.getForEntity(url, PaginatedCustomers.class);
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-User-Id", userIdParam);
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            ResponseEntity<PaginatedCustomers> response = restTemplate.exchange(url, HttpMethod.GET, entity, PaginatedCustomers.class);
             if (response.getBody() != null && response.getBody().content != null) {
                 customers = response.getBody().content;
             }
-            log.info("Fetched {} customers from customer-service", customers.size());
+            log.info("Fetched {} customers from customer-service for userId={}", customers.size(), userIdParam);
         } catch (Exception e) {
             log.error("Failed to fetch customers: {}", e.getMessage());
             throw new RuntimeException("Customer-service communication error: " + e.getMessage());
@@ -149,14 +157,25 @@ public class SegmentationService {
             // Update in customer-service via REST
             try {
                 String updateUrl = customerServiceUrl + "/api/customers/" + c.id;
-                restTemplate.put(updateUrl, c);
+                HttpHeaders updateHeaders = new HttpHeaders();
+                updateHeaders.setContentType(MediaType.APPLICATION_JSON);
+                String userIdParam = (userId == null || userId.trim().isEmpty() || userId.equalsIgnoreCase("guest"))
+                        ? "guest" : userId;
+                updateHeaders.set("X-User-Id", userIdParam);
+                HttpEntity<CustomerDto> updateEntity = new HttpEntity<>(c, updateHeaders);
+                restTemplate.exchange(updateUrl, HttpMethod.PUT, updateEntity, Void.class);
             } catch (Exception e) {
                 log.error("Failed to update customer segment in customer-service for ID {}: {}", c.id, e.getMessage());
             }
         }
 
-        // 4. Recalculate segment stats and save to MongoDB
-        segmentRepository.deleteAll(); // Refresh segments
+        // 4. Recalculate segment stats and save to MongoDB (scoped to userId)
+        final String effectiveUserId = (userId == null || userId.trim().isEmpty()) ? "guest" : userId;
+        if (effectiveUserId.equalsIgnoreCase("guest")) {
+            segmentRepository.deleteForGuest();
+        } else {
+            segmentRepository.deleteByUserId(effectiveUserId);
+        }
         List<Segment> savedSegments = new ArrayList<>();
 
         for (Map.Entry<String, List<CustomerDto>> entry : segmentGroupedCustomers.entrySet()) {
@@ -191,13 +210,14 @@ public class SegmentationService {
                     .size(segCusts.size())
                     .topCategory(topCategory)
                     .createdAt(LocalDateTime.now())
+                    .userId(effectiveUserId)
                     .build();
 
             savedSegments.add(segmentRepository.save(segment));
         }
 
         // 5. Emit Kafka Event to notify lead-service or campaign-service
-        sendSegmentationKafkaEvent(savedSegments);
+        sendSegmentationKafkaEvent(effectiveUserId, savedSegments);
 
         return Map.of(
                 "message", "Customer segmentation job completed successfully via ML Service!",
@@ -232,15 +252,16 @@ public class SegmentationService {
         }
     }
 
-    private void sendSegmentationKafkaEvent(List<Segment> segments) {
+    private void sendSegmentationKafkaEvent(String userId, List<Segment> segments) {
         try {
             Map<String, Object> event = new HashMap<>();
             event.put("eventType", "SEGMENTATION_RUN_COMPLETED");
             event.put("timestamp", System.currentTimeMillis());
+            event.put("userId", userId);
             event.put("segments", segments);
 
             kafkaTemplate.send(TOPIC, event);
-            log.info("Dispatched Kafka event to topic '{}': SEGMENTATION_RUN_COMPLETED", TOPIC);
+            log.info("Dispatched Kafka event to topic '{}': SEGMENTATION_RUN_COMPLETED for userId={}", TOPIC, userId);
         } catch (Exception e) {
             log.error("Failed to dispatch Kafka event: {}", e.getMessage());
         }

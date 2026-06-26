@@ -128,6 +128,7 @@ public class DataInitializer implements CommandLineRunner {
                         .productCategories(categories)
                         .registrationDate(registrationDate)
                         .segment(segment)
+                        .userId("guest")
                         .build();
 
                 customers.add(customer);

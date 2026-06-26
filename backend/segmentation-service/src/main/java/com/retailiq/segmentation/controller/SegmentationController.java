@@ -18,8 +18,8 @@ public class SegmentationController {
     private final SegmentationService segmentationService;
 
     @GetMapping
-    public ResponseEntity<List<Segment>> getSegments() {
-        return ResponseEntity.ok(segmentationService.getAllSegments());
+    public ResponseEntity<List<Segment>> getSegments(@RequestHeader(value = "X-User-Id", required = false) String userId) {
+        return ResponseEntity.ok(segmentationService.getAllSegments(userId));
     }
 
     @GetMapping("/{id}")
@@ -30,12 +30,12 @@ public class SegmentationController {
     }
 
     @GetMapping("/summary")
-    public ResponseEntity<Map<String, Object>> getSummary() {
-        return ResponseEntity.ok(segmentationService.getSegmentsSummary());
+    public ResponseEntity<Map<String, Object>> getSummary(@RequestHeader(value = "X-User-Id", required = false) String userId) {
+        return ResponseEntity.ok(segmentationService.getSegmentsSummary(userId));
     }
 
     @PostMapping("/run")
-    public ResponseEntity<Map<String, Object>> runSegmentation() {
-        return ResponseEntity.ok(segmentationService.runSegmentationJob());
+    public ResponseEntity<Map<String, Object>> runSegmentation(@RequestHeader(value = "X-User-Id", required = false) String userId) {
+        return ResponseEntity.ok(segmentationService.runSegmentationJob(userId));
     }
 }

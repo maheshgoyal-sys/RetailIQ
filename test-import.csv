@@ -1,0 +1,3 @@
+name,email,phone,age,gender,city,totalSpend,purchaseCount,lastPurchaseDate,productCategories,registrationDate,segment
+Alice Example,alice@example.com,9876543210,34,Female,Bengaluru,12345.67,14,2026-05-15,Apparel,2026-05-01,High value loyal
+Bob Example,bob@example.com,9876543211,29,Male,Hyderabad,4500.50,6,2026-05-20,Electronics,2026-05-03,Regular buyers

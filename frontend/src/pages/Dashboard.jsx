@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   Layers, 
@@ -23,51 +23,137 @@ import {
   Legend, 
   ResponsiveContainer 
 } from 'recharts';
+import { customerAPI, authAPI, leadAPI, campaignAPI, dashboardAPI } from '../services/api';
 
 export default function Dashboard() {
-  // KPI Mock Data
+  const [showEmptyOnboarding, setShowEmptyOnboarding] = useState(false);
+  const [dashboardState, setDashboardState] = useState({
+    totalCustomers: null,
+    activeSegments: null,
+    leadsGenerated: null,
+    avgLeadScore: null,
+    segmentData: null,
+    segmentCards: null,
+  });
+  const [isDashboardLoaded, setIsDashboardLoaded] = useState(false);
+
+  useEffect(() => {
+    const user = authAPI.getUser();
+    if (user?.isGuest !== true) {
+      Promise.allSettled([
+        customerAPI.getCustomers(0, 1),
+        dashboardAPI.getSegmentSummary(),
+        leadAPI.getLeads(),
+        campaignAPI.getCampaigns(),
+      ])
+        .then(([customerResult, summaryResult, leadResult, campaignResult]) => {
+          const customerData = customerResult.status === 'fulfilled' ? customerResult.value : null;
+          const summaryData = summaryResult.status === 'fulfilled' ? summaryResult.value : null;
+          const leads = leadResult.status === 'fulfilled' ? leadResult.value : [];
+          const campaigns = campaignResult.status === 'fulfilled' ? campaignResult.value : [];
+
+          if (customerData?.totalElements === 0) {
+            setShowEmptyOnboarding(true);
+          }
+
+          const totalCustomers = customerData?.totalElements ?? summaryData?.totalCustomers ?? null;
+          const activeSegments = summaryData?.segmentCount ?? null;
+          const leadsGenerated = Array.isArray(leads) ? leads.length : null;
+          const avgLeadScore = Array.isArray(leads) && leads.length > 0
+            ? Math.round(leads.reduce((sum, lead) => sum + (lead.leadScore || 0), 0) / leads.length)
+            : null;
+
+          const segmentData = summaryData?.segments?.map((segment) => ({
+            name: segment.name,
+            value: segment.size,
+            color: segment.name === 'High value loyal' ? '#6366f1'
+              : segment.name === 'Regular buyers' ? '#22c55e'
+              : segment.name === 'At-risk customers' ? '#f59e0b'
+              : segment.name === 'Dormant' ? '#64748b'
+              : '#ef4444',
+          })) || null;
+
+          const segmentCards = summaryData?.segments?.slice(0, 4).map((segment) => ({
+            name: segment.name,
+            count: segment.size,
+            spend: `Rs ${Math.round(segment.avgSpend)}`,
+            freq: `${Math.max(1, Math.round(segment.avgSpend / 1000))}x/yr`,
+            badge: 'Live',
+            badgeColor: 'bg-sky-100 text-sky-700 border-sky-200',
+            fill: Math.min(100, Math.max(10, Math.round(segment.avgSpend / 400))),
+            colorCode: segment.name === 'High value loyal' ? 'bg-indigo-500'
+              : segment.name === 'Regular buyers' ? 'bg-emerald-500'
+              : segment.name === 'At-risk customers' ? 'bg-amber-500'
+              : 'bg-slate-500',
+          })) || null;
+
+          setDashboardState({ totalCustomers, activeSegments, leadsGenerated, avgLeadScore, segmentData, segmentCards });
+          setIsDashboardLoaded(true);
+        })
+        .catch(() => {
+          setIsDashboardLoaded(true);
+        });
+    }
+  }, []);
+
+  const formatNumber = (value, fallback) => {
+    if (value === null || value === undefined) return fallback;
+    return typeof value === 'number' ? value.toLocaleString() : value;
+  };
+
   const kpis = [
-    { id: '1', title: 'Total customers', value: '4,821', desc: '-12% this month', trend: 'down', icon: Users, color: 'text-indigo-600 bg-indigo-50 border-indigo-100' },
-    { id: '2', title: 'Active segments', value: '5', desc: 'K-Means + RFM', trend: 'neutral', icon: Layers, color: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
-    { id: '3', title: 'Leads generated', value: '1,247', desc: '+34 today', trend: 'up', icon: Briefcase, color: 'text-amber-600 bg-amber-50 border-amber-100' },
-    { id: '4', title: 'Avg lead score', value: '73', desc: 'Target: 70+', trend: 'up', icon: TrendingUp, color: 'text-purple-600 bg-purple-50 border-purple-100' },
+    { id: '1', title: 'Total customers', value: formatNumber(dashboardState.totalCustomers, '4,821'), desc: '-12% this month', trend: 'down', icon: Users, color: 'text-indigo-600 bg-indigo-50 border-indigo-100' },
+    { id: '2', title: 'Active segments', value: formatNumber(dashboardState.activeSegments, '5'), desc: 'K-Means + RFM', trend: 'neutral', icon: Layers, color: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
+    { id: '3', title: 'Leads generated', value: formatNumber(dashboardState.leadsGenerated, '1,247'), desc: '+34 today', trend: 'up', icon: Briefcase, color: 'text-amber-600 bg-amber-50 border-amber-100' },
+    { id: '4', title: 'Avg lead score', value: formatNumber(dashboardState.avgLeadScore, '73'), desc: 'Target: 70+', trend: 'up', icon: TrendingUp, color: 'text-purple-600 bg-purple-50 border-purple-100' },
   ];
 
-  // Pie Chart Segment Data
-  const segmentData = [
-    { name: 'High value loyal', value: 892, color: '#6366f1' }, // Indigo
-    { name: 'Regular buyers', value: 1654, color: '#22c55e' }, // Green
-    { name: 'At-risk customers', value: 743, color: '#f59e0b' }, // Amber
-    { name: 'New customers', value: 412, color: '#ef4444' }, // Red
-    { name: 'Dormant', value: 1120, color: '#64748b' }, // Slate
+  const segmentData = dashboardState.segmentData || [
+    { name: 'High value loyal', value: 892, color: '#6366f1' },
+    { name: 'Regular buyers', value: 1654, color: '#22c55e' },
+    { name: 'At-risk customers', value: 743, color: '#f59e0b' },
+    { name: 'New customers', value: 412, color: '#ef4444' },
+    { name: 'Dormant', value: 1120, color: '#64748b' },
   ];
 
-  // Bar Chart Leads Data
-  const leadTrends = [
-    { name: 'Jan', New: 120, Contacted: 80, Converted: 50 },
-    { name: 'Feb', New: 150, Contacted: 100, Converted: 68 },
-    { name: 'Mar', New: 220, Contacted: 140, Converted: 92 },
-    { name: 'Apr', New: 180, Contacted: 110, Converted: 84 },
-    { name: 'May', New: 290, Contacted: 190, Converted: 145 },
-    { name: 'Jun', New: 340, Contacted: 220, Converted: 198 },
-  ];
-
-  // Recent Activity Feed
-  const recentActivities = [
-    { id: 1, type: 'segmentation', msg: 'ML model segmentation executed successfully.', time: '10 mins ago', icon: Sparkles, color: 'bg-emerald-50 text-emerald-600' },
-    { id: 2, type: 'lead', msg: '12 new high-value leads generated for High Value Loyal.', time: '2 hours ago', icon: Briefcase, color: 'bg-indigo-50 text-indigo-600' },
-    { id: 3, type: 'campaign', msg: 'Diwali VIP Offer campaign dispatched (open rate: 84.5%).', time: '1 day ago', icon: ShoppingBag, color: 'bg-purple-50 text-purple-600' },
-    { id: 4, type: 'customer', msg: 'Bulk CSV imported: 200 new customers registered.', time: '1 day ago', icon: Users, color: 'bg-sky-50 text-sky-600' },
-  ];
-
-  // Segment Cards below
-  const segmentCards = [
+  const segmentCards = dashboardState.segmentCards || [
     { name: 'High value loyal', count: 892, spend: 'Rs 18,400', freq: '14x/yr', badge: 'Premium', badgeColor: 'bg-purple-100 text-purple-700 border-purple-200', fill: 85, colorCode: 'bg-indigo-500' },
     { name: 'Regular buyers', count: '1,654', spend: 'Rs 6,200', freq: '7x/yr', badge: 'Active', badgeColor: 'bg-emerald-100 text-emerald-700 border-emerald-200', fill: 65, colorCode: 'bg-emerald-500' },
     { name: 'At-risk customers', count: 743, spend: 'Rs 4,100', freq: 'Last buy: 60d ago', badge: 'Watch', badgeColor: 'bg-amber-100 text-amber-700 border-amber-200', fill: 40, colorCode: 'bg-amber-500' },
     { name: 'Dormant', count: '1,532', spend: 'No purchase in 90+ days', freq: '', badge: 'Inactive', badgeColor: 'bg-slate-100 text-slate-700 border-slate-200', fill: 15, colorCode: 'bg-slate-500' }
   ];
+  const leadTrends = [
+  { name: 'Jan', New: 120, Contacted: 90, Converted: 45 },
+  { name: 'Feb', New: 150, Contacted: 110, Converted: 60 },
+  { name: 'Mar', New: 180, Contacted: 130, Converted: 75 },
+  { name: 'Apr', New: 200, Contacted: 145, Converted: 82 },
+  { name: 'May', New: 220, Contacted: 160, Converted: 95 },
+  { name: 'Jun', New: 250, Contacted: 180, Converted: 110 }
+];
 
+const recentActivities = [
+  {
+    id: 1,
+    msg: 'New customer segment created',
+    time: '5 min ago',
+    icon: Users,
+    color: 'bg-blue-100 text-blue-600'
+  },
+  {
+    id: 2,
+    msg: 'Campaign launched successfully',
+    time: '20 min ago',
+    icon: ShoppingBag,
+    color: 'bg-green-100 text-green-600'
+  },
+  {
+    id: 3,
+    msg: 'Lead score model updated',
+    time: '1 hour ago',
+    icon: Sparkles,
+    color: 'bg-purple-100 text-purple-600'
+  }
+];
   return (
     <div className="space-y-8">
       {/* Top Welcome Title */}
@@ -78,9 +164,20 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 self-start sm:self-auto">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-          <span>GET /api/dashboard 200 OK</span>
+          <span>{isDashboardLoaded ? 'Live dashboard metrics loaded' : 'Loading dashboard data...'}</span>
         </div>
       </div>
+
+      {showEmptyOnboarding && (
+        <div className="glass-card border border-dashed border-indigo-200 bg-indigo-50/80 rounded-3xl p-6 text-slate-900 shadow-premium animate-fade-in">
+          <h3 className="text-xl font-extrabold mb-2">Welcome to your RetailIQ workspace</h3>
+          <p className="text-sm text-slate-600 mb-4">Your account is ready. Import your first customer CSV or create a campaign to kick off segmentation, lead scoring, and performance analytics.</p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <a href="/customers" className="inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-500 transition">Upload customer data</a>
+            <a href="/campaigns" className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 transition">Schedule your first campaign</a>
+          </div>
+        </div>
+      )}
 
       {/* KPI Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

@@ -13,7 +13,7 @@ import {
   CheckCircle,
   Play
 } from 'lucide-react';
-import { campaignAPI, segmentAPI } from '../services/api';
+import { campaignAPI, segmentAPI, authAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 export default function Campaigns() {
@@ -21,6 +21,10 @@ export default function Campaigns() {
   const [segments, setSegments] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const user = authAPI.getUser();
+  const isGuest = user?.isGuest === true;
+  const canEdit = !isGuest;
 
   // Form Fields
   const [formName, setFormName] = useState('');
@@ -55,6 +59,10 @@ export default function Campaigns() {
 
   const handleCreateCampaign = async (e) => {
     e.preventDefault();
+    if (!canEdit) {
+      toast.error('Guest mode is read-only. Login to schedule campaigns.');
+      return;
+    }
     const segmentName = segments.find(s => s.id === formSegment)?.segmentName || 'Target Segment';
     const payload = {
       name: formName,
@@ -76,6 +84,10 @@ export default function Campaigns() {
   };
 
   const handleSendCampaign = async (id, name) => {
+    if (!canEdit) {
+      toast.error('Guest mode is read-only. Login to send campaigns.');
+      return;
+    }
     const loader = toast.loading(`Dispatching queue for ${name}...`);
     try {
       await campaignAPI.sendCampaign(id);
@@ -109,11 +121,14 @@ export default function Campaigns() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">Campaigns</h2>
-          <p className="text-slate-500 text-sm mt-1">Design, execute, and monitor conversions of targeted retail campaigns.</p>
+          <p className="text-slate-500 text-sm mt-1">
+            {isGuest ? 'Guest mode is read-only. View seeded campaign examples and login to schedule or send live campaigns.' : 'Design, execute, and monitor conversions of targeted retail campaigns.'}
+          </p>
         </div>
         <button
-          onClick={() => setModalOpen(true)}
-          className="glow-btn flex items-center gap-2 bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-500 hover:to-indigo-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-primary-500/20 transition-all duration-300 self-start sm:self-auto"
+          onClick={() => canEdit ? setModalOpen(true) : toast.error('Guest mode is read-only. Login to create campaigns.')}
+          disabled={!canEdit}
+          className={`glow-btn flex items-center gap-2 ${canEdit ? 'bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-500 hover:to-indigo-500 text-white' : 'bg-slate-100 text-slate-400 cursor-not-allowed'} px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-primary-500/20 transition-all duration-300 self-start sm:self-auto`}
         >
           <Plus className="h-4 w-4" />
           <span>New Campaign</span>
@@ -178,10 +193,11 @@ export default function Campaigns() {
                 ) : (
                   <button
                     onClick={() => handleSendCampaign(camp.id, camp.name)}
-                    className="glow-btn w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl py-2 px-4 text-xs font-bold shadow-md shadow-indigo-500/10 transition-all duration-200"
+                    disabled={!canEdit}
+                    className={`glow-btn w-full flex items-center justify-center gap-2 ${canEdit ? 'bg-indigo-600 hover:bg-indigo-500 text-white' : 'bg-slate-100 text-slate-400 cursor-not-allowed'} rounded-xl py-2 px-4 text-xs font-bold shadow-md shadow-indigo-500/10 transition-all duration-200`}
                   >
                     <Play className="h-3.5 w-3.5 fill-current" />
-                    <span>Launch Send Queue</span>
+                    <span>{canEdit ? 'Launch Send Queue' : 'Guest Read-Only'}</span>
                   </button>
                 )}
               </div>

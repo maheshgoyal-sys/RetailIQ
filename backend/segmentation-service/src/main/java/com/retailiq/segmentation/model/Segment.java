@@ -25,4 +25,5 @@ public class Segment {
     private int size;
     private String topCategory;
     private LocalDateTime createdAt;
+    private String userId;
 }

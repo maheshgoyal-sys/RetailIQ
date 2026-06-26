@@ -1,17 +1,22 @@
 package com.retailiq.campaign.service;
 
-import com.retailiq.campaign.model.Campaign;
-import com.retailiq.campaign.repository.CampaignRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Random;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDateTime;
-import java.util.*;
+import com.retailiq.campaign.model.Campaign;
+import com.retailiq.campaign.repository.CampaignRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -35,11 +40,15 @@ public class CampaignService {
         public int size;
     }
 
-    public List<Campaign> getAllCampaigns() {
-        return campaignRepository.findAll();
+    public List<Campaign> getAllCampaigns(String userId) {
+        if (userId == null || userId.trim().isEmpty() || userId.equalsIgnoreCase("guest")) {
+            return campaignRepository.findForGuest();
+        }
+        return campaignRepository.findByUserId(userId);
     }
 
-    public Campaign createCampaign(Campaign campaign) {
+    public Campaign createCampaign(Campaign campaign, String userId) {
+        campaign.setUserId(userId != null && !userId.trim().isEmpty() ? userId : "guest");
         campaign.setStatus("SCHEDULED");
         campaign.setSentCount(0);
         campaign.setOpenRate(0.0);
@@ -47,9 +56,13 @@ public class CampaignService {
         return campaignRepository.save(campaign);
     }
 
-    public Campaign sendCampaign(String id) {
+    public Campaign sendCampaign(String id, String userId) {
         Campaign campaign = campaignRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Campaign not found with ID: " + id));
+
+        if (!isAuthorizedUser(campaign, userId)) {
+            throw new NoSuchElementException("Campaign not found with ID: " + id);
+        }
 
         if ("SENT".equals(campaign.getStatus())) {
             throw new IllegalStateException("Campaign has already been sent");
@@ -57,11 +70,16 @@ public class CampaignService {
 
         log.info("Executing campaign send queue for campaign: {}", campaign.getName());
 
+        String effectiveUserId = (userId == null || userId.trim().isEmpty() || userId.equalsIgnoreCase("guest")) ? "guest" : userId;
+
         // 1. Fetch Segment Size from segmentation-service
         int size = 0;
         try {
             String url = segmentationServiceUrl + "/api/segments/" + campaign.getTargetSegmentId();
-            ResponseEntity<SegmentDto> response = restTemplate.getForEntity(url, SegmentDto.class);
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.set("X-User-Id", effectiveUserId);
+            org.springframework.http.HttpEntity<Void> entity = new org.springframework.http.HttpEntity<>(headers);
+            ResponseEntity<SegmentDto> response = restTemplate.exchange(url, org.springframework.http.HttpMethod.GET, entity, SegmentDto.class);
             if (response.getBody() != null) {
                 size = response.getBody().size;
             }
@@ -88,6 +106,17 @@ public class CampaignService {
         publishCampaignKafkaEvent(savedCampaign);
 
         return savedCampaign;
+    }
+
+    private boolean isGuest(String userId) {
+        return userId == null || userId.trim().isEmpty() || userId.equalsIgnoreCase("guest");
+    }
+
+    private boolean isAuthorizedUser(Campaign campaign, String userId) {
+        if (isGuest(userId)) {
+            return campaign.getUserId() == null || campaign.getUserId().trim().isEmpty() || campaign.getUserId().equalsIgnoreCase("guest");
+        }
+        return userId.equals(campaign.getUserId());
     }
 
     private void publishCampaignKafkaEvent(Campaign campaign) {

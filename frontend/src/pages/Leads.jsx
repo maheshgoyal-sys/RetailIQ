@@ -12,7 +12,7 @@ import {
   LayoutGrid,
   List
 } from 'lucide-react';
-import { leadAPI, segmentAPI } from '../services/api';
+import { leadAPI, segmentAPI, authAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 export default function Leads() {
@@ -23,6 +23,10 @@ export default function Leads() {
   const [search, setSearch] = useState('');
   const [generating, setGenerating] = useState(false);
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'kanban'
+
+  const user = authAPI.getUser();
+  const isGuest = user?.isGuest === true;
+  const canEdit = !isGuest;
 
   const fetchLeads = async () => {
     try {
@@ -48,6 +52,10 @@ export default function Leads() {
   }, [selectedStatus, selectedSegment]);
 
   const handleGenerateLeads = async () => {
+    if (!canEdit) {
+      toast.error('Guest mode is read-only. Login to generate leads.');
+      return;
+    }
     setGenerating(true);
     const loader = toast.loading('Running ML Lead Scoring pipeline...');
     try {
@@ -62,6 +70,10 @@ export default function Leads() {
   };
 
   const handleUpdateStatus = async (id, status) => {
+    if (!canEdit) {
+      toast.error('Guest mode is read-only. Login to change status.');
+      return;
+    }
     try {
       await leadAPI.updateLeadStatus(id, status.toLowerCase());
       toast.success(`Lead status updated to ${status}`);
@@ -117,7 +129,9 @@ export default function Leads() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">Leads</h2>
-          <p className="text-slate-500 text-sm mt-1">Nurture high-score leads generated from targeted high-value segments.</p>
+          <p className="text-slate-500 text-sm mt-1">
+            {isGuest ? 'Guest mode is read-only. View sample leads and login for live scoring and campaign-ready actions.' : 'Nurture high-score leads generated from targeted high-value segments.'}
+          </p>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
           {/* View Toggles */}
@@ -141,11 +155,11 @@ export default function Leads() {
           {/* Generate Leads Trigger */}
           <button
             onClick={handleGenerateLeads}
-            disabled={generating}
-            className="glow-btn flex items-center gap-2 bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-500 hover:to-indigo-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-primary-500/20 transition-all duration-300 disabled:opacity-50"
+            disabled={generating || !canEdit}
+            className={`glow-btn flex items-center gap-2 ${canEdit ? 'bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-500 hover:to-indigo-500 text-white' : 'bg-slate-100 text-slate-400 cursor-not-allowed'} px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-primary-500/20 transition-all duration-300 disabled:opacity-50`}
           >
             <Sparkles className="h-4 w-4" />
-            <span>{generating ? 'Scoring ML...' : 'Generate Leads'}</span>
+            <span>{generating ? 'Scoring ML...' : canEdit ? 'Generate Leads' : 'Guest Read-Only'}</span>
           </button>
         </div>
       </div>
@@ -249,7 +263,8 @@ export default function Leads() {
                         <select
                           value={l.status}
                           onChange={(e) => handleUpdateStatus(l.id, e.target.value)}
-                          className="bg-white border border-slate-200 text-xs font-bold text-slate-700 py-1.5 px-3 rounded-lg outline-none cursor-pointer hover:border-slate-300 transition-all"
+                          disabled={!canEdit}
+                          className={`bg-white border border-slate-200 text-xs font-bold ${canEdit ? 'text-slate-700 cursor-pointer hover:border-slate-300' : 'text-slate-400 cursor-not-allowed'} py-1.5 px-3 rounded-lg outline-none transition-all`}
                         >
                           <option value="new">New</option>
                           <option value="contacted">Contacted</option>
